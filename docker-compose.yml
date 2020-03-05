@@ -1,0 +1,17 @@
+version: '2.3'
+services:
+  coursera_nlp_service:
+    image: coursera_nlp
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - /home:/home
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/ssh/sshd_config:/etc/ssh/sshd_config:ro
+      - /etc/shadow:/etc/shadow:ro
+    environment:
+      NVIDIA_VISIBLE_DEVICES: 0
+    ports:
+      - '8060:22'
