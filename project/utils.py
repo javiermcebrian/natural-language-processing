@@ -49,12 +49,15 @@ def load_embeddings(embeddings_path):
     ########################
     #### YOUR CODE HERE ####
     ########################
-
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    
+    embeddings = {}
+    for line in open(embeddings_path, encoding='utf-8'):
+        row = line.strip().split('\t')
+        embeddings[row[0]] = np.array(row[1:], dtype=np.float32)
+    
+    embeddings_dim = len(embeddings[row[0]])
+    
+    return embeddings, embeddings_dim
 
 
 def question_to_vec(question, embeddings, dim):
@@ -66,11 +69,14 @@ def question_to_vec(question, embeddings, dim):
     #### YOUR CODE HERE ####
     ########################
 
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    result = np.zeros(dim)
+    nb = 0
+    for t in question.split():
+        if t in embeddings:
+            result += embeddings[t]
+            nb += 1
+    result = result / float(nb) if nb else result
+    return result
 
 
 def unpickle_file(filename):
