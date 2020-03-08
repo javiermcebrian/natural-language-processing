@@ -52,6 +52,8 @@ class BotHandler(object):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--token', type=str, default='')
+    parser.add_argument('--ip', type=str)
+    parser.add_argument('--port', type=str)
     return parser.parse_args()
 
 
@@ -72,6 +74,8 @@ class SimpleDialogueManager(object):
 def main():
     args = parse_args()
     token = args.token
+    ip = args.ip
+    port = args.port
 
     if not token:
         if not "TELEGRAM_TOKEN" in os.environ:
@@ -86,9 +90,9 @@ def main():
     
     # This is the point where you plug it into the Telegram bot. 
     # Do not forget to import all needed dependencies when you do so.
-    
+
     dialogue_manager = DialogueManager(paths=RESOURCE_PATH)
-    dialogue_manager.create_chitchat_bot()
+    dialogue_manager.create_chitchat_bot(ip=ip, port=port)
     bot = BotHandler(token=token, dialogue_manager=dialogue_manager)
     
     ###############################################################
@@ -110,6 +114,7 @@ def main():
                         bot.send_message(chat_id, "Hmm, you are sending some weird characters to me...")
             offset = max(offset, update['update_id'] + 1)
         time.sleep(1)
+
 
 if __name__ == "__main__":
     main()

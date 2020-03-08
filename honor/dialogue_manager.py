@@ -1,8 +1,8 @@
 from pathlib import Path
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances_argmin
+import requests
 
-from chatterbot import ChatBot
 from utils import *
 
 _ARTIFACTS_PATH = Path('artifacts')
@@ -31,6 +31,36 @@ class ThreadRanker(object):
         return thread_ids[best_thread]
 
 
+class QARanker(object):
+    def __init__(self, paths):
+        self.embeddings_path = _ARTIFACTS_PATH / paths['QA_EMBEDDINGS']
+
+    def set_endpoint(self, ip: str, port: str):
+        self.endpoint = f'http://{ip}:{port}/sentence-transformers'
+        self.ping = f'http://{ip}:{port}/ping'
+        self._warmup_service()
+
+    def _warmup_service(self):
+        r = requests.get(url=self.ping)
+        status = r.json()['status']
+        if status != 200:
+            raise Exception(f'Service Unavailable: status {status}')
+
+    def _post_service(self, text: str):
+        r = requests.post(url=self.endpoint, json={'text': text})
+        return np.array(r.json()['embedding'])
+
+    def get_best_answer(self, question: str):
+        # Load sentence embeddings into memory
+        answers, q_embeddings = unpickle_file(str(self.embeddings_path))
+        # Get question vector
+        question_vec = np.expand_dims(self._post_service(text=question), axis=0)
+        # Get best answer ID
+        best_answer_id = pairwise_distances_argmin(X=question_vec, Y=q_embeddings, axis=1)[0]
+        # Get the answer
+        return answers[best_answer_id]
+
+
 class DialogueManager(object):
     def __init__(self, paths):
         print("Loading resources...")
@@ -45,37 +75,25 @@ class DialogueManager(object):
         self.tag_classifier = unpickle_file(str(_ARTIFACTS_PATH / paths['TAG_CLASSIFIER']))
         self.thread_ranker = ThreadRanker(paths)
 
-    def create_chitchat_bot(self):
-        """Initializes self.chitchat_bot with some conversational model."""
+        # Chit-chat
+        self.qa_ranker = QARanker(paths)
 
-        # Hint: you might want to create and train chatterbot.ChatBot here.
-        # It could be done by creating ChatBot with the *trainer* parameter equals 
-        # "chatterbot.trainers.ChatterBotCorpusTrainer"
-        # and then calling *train* function with "chatterbot.corpus.english" param
-        
-        ########################
-        #### YOUR CODE HERE ####
-        ########################
-
-        self.chitchat_bot = ChatBot('Jabigotes', trainer='chatterbot.trainers.ChatterBotCorpusTrainer')
-        self.chitchat_bot.train("chatterbot.corpus.english")
-
+    def create_chitchat_bot(self, ip: str, port: str):
+        self.qa_ranker.set_endpoint(ip=ip, port=port)
        
     def generate_answer(self, question):
         """Combines stackoverflow and chitchat parts using intent recognition."""
 
         # Recognize intent of the question using `intent_recognizer`.
         # Don't forget to prepare question and calculate features for the question.
-        
         prepared_question = text_prepare(question)
         features = self.tfidf_vectorizer.transform([prepared_question])
         intent = self.intent_recognizer.predict(features)
 
         # Chit-chat part:
         if intent == 'dialogue':
-            # Pass question to chitchat_bot to generate a response.       
-            response = self.chitchat_bot.get_response(question)
-            return response
+            # Launch dialogue model and sentence embeddings to get best answer. Then release the memory used.
+            return self.qa_ranker.get_best_answer(question=prepared_question)
         
         # Goal-oriented part:
         else:
@@ -83,6 +101,6 @@ class DialogueManager(object):
             tag = self.tag_classifier.predict(features)[0]
             
             # Pass prepared_question to thread_ranker to get predictions.
-            thread_id = self.thread_ranker.get_best_thread(question=question, tag_name=tag)
+            thread_id = self.thread_ranker.get_best_thread(question=prepared_question, tag_name=tag)
            
             return self.ANSWER_TEMPLATE % (tag, thread_id)

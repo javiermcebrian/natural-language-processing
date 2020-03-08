@@ -13,6 +13,7 @@ RESOURCE_PATH = {
     'TFIDF_VECTORIZER': 'tfidf_vectorizer.pkl',
     'THREAD_EMBEDDINGS_FOLDER': 'thread_embeddings_by_tags',
     'WORD_EMBEDDINGS': 'word_embeddings.tsv',
+    'QA_EMBEDDINGS': 'qa_embeddings.pkl'
 }
 
 
