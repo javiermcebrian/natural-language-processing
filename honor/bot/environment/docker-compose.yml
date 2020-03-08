@@ -1,0 +1,30 @@
+version: '2.3'
+services:
+  coursera_nlp_honors_pycharm:
+    image: coursera_nlp_honors
+    build:
+      context: .
+      dockerfile: Dockerfile.experiments
+    command: /usr/sbin/sshd -D
+    volumes:
+      - /home:/home
+      - /etc/group:/etc/group:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/ssh/sshd_config:/etc/ssh/sshd_config:ro
+      - /etc/shadow:/etc/shadow:ro
+    environment:
+      NVIDIA_VISIBLE_DEVICES: 0
+    ports:
+      - '8050:22'  # PyCharm interpreter
+  coursera_nlp_honors_notebook:
+    image: coursera_nlp_honors
+    build:
+      context: .
+      dockerfile: Dockerfile.experiments
+    command: bash -c "run_notebook"
+    volumes:
+      - $PWD/..:/root/coursera
+    environment:
+      NVIDIA_VISIBLE_DEVICES: 0
+    ports:
+      - '8040:8080'  # Notebook server
