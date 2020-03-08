@@ -1,0 +1,1 @@
+sudo docker run -d -p 8080:8080 -v /home/ubuntu/artifacts/:/app/artifacts javiermcebrian/sentence_transformers_service

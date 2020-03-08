@@ -1,0 +1,4 @@
+docker build -t sentence_transformers_service .
+docker login --username=javiermcebrian
+docker tag sentence_transformers_service javiermcebrian/sentence_transformers_service:latest
+docker push javiermcebrian/sentence_transformers_service:latest
