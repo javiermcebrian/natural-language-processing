@@ -17,4 +17,3 @@ if [ -z "$2" ]
 fi
 
 docker run -d -p "${port}":8080 --name "${name}" -v $PWD:/root/coursera akashin/coursera-aml-nlp bash -c "run_notebook"
-
